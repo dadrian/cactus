@@ -82,6 +82,9 @@ func TestVerifyMTCSignatureCosignerIDMismatch(t *testing.T) {
 }
 
 func TestVerifyMTCSignatureUnsupportedReturnsSpecificError(t *testing.T) {
+	if mldsaVerificationAvailable {
+		t.Skip("ML-DSA verifier is available in this build")
+	}
 	key := CosignerKey{ID: TrustAnchorID("x"), Algorithm: AlgMLDSA44, PublicKey: bytes.Repeat([]byte{0}, 16)}
 	err := VerifyMTCSignature(key, MTCSignature{CosignerID: TrustAnchorID("x")}, nil)
 	if err != ErrUnsupportedAlgorithm {

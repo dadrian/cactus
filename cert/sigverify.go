@@ -13,8 +13,7 @@ import (
 
 // SignatureAlgorithm identifies how to interpret an MTCSignature's
 // public key + signature bytes. Mirrors the §5.4.2 algorithm registry
-// — ML-DSA values are not yet implemented in the verifier; callers can
-// supply a custom verifier via VerifyMTCSignatureWith.
+// — ML-DSA values require the mldsa build tag.
 type SignatureAlgorithm uint16
 
 const (
@@ -41,9 +40,8 @@ type CosignerKey struct {
 // caller supplies a CosignerKey carrying the algorithm + key bytes so
 // the cosigner ID is resolved out-of-band.
 //
-// Only ECDSA-P256-SHA256, ECDSA-P384-SHA384, and Ed25519 are
-// implemented today. ML-DSA verification requires the optional `mldsa`
-// build tag; until then, AlgMLDSA* returns ErrUnsupportedAlgorithm.
+// ML-DSA verification requires the optional `mldsa` build tag; without it,
+// AlgMLDSA* returns ErrUnsupportedAlgorithm.
 func VerifyMTCSignature(key CosignerKey, sig MTCSignature, signedMessage []byte) error {
 	if string(sig.CosignerID) != string(key.ID) {
 		return fmt.Errorf("cert: cosigner ID mismatch: sig=%q key=%q", sig.CosignerID, key.ID)
@@ -62,7 +60,7 @@ func VerifyMTCSignature(key CosignerKey, sig MTCSignature, signedMessage []byte)
 		}
 		return nil
 	case AlgMLDSA44, AlgMLDSA65:
-		return ErrUnsupportedAlgorithm
+		return verifyMLDSA(key.Algorithm, key.PublicKey, signedMessage, sig.Signature)
 	default:
 		return fmt.Errorf("cert: algorithm 0x%04x not recognised", uint16(key.Algorithm))
 	}
