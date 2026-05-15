@@ -72,7 +72,7 @@ var ErrBadCSR = errors.New("badCSR")
 
 // Validate checks csr against order and returns a Validated.
 func (v *Validator) Validate(csr *x509.CertificateRequest, order OrderInput) (*Validated, error) {
-	if err := csr.CheckSignature(); err != nil {
+	if err := verifyCSRSignature(csr); err != nil {
 		return nil, fmt.Errorf("%w: csr signature: %v", ErrBadCSR, err)
 	}
 
