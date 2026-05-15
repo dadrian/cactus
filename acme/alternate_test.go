@@ -25,10 +25,10 @@ import (
 	"github.com/letsencrypt/cactus/storage"
 )
 
-// TestAlternateURLReturns503WithRetryAfter pins the §9-permitted
-// behavior: the alternate (landmark-relative) cert URL returns
-// HTTP 503 with a Retry-After header parseable as either an integer
-// number of seconds or an HTTP-date.
+// TestAlternateURLReturns503WithRetryAfter pins the §9-permitted direct
+// endpoint behavior: the alternate (landmark-relative) cert URL returns HTTP
+// 503 with a Retry-After header parseable as either an integer number of
+// seconds or an HTTP-date.
 func TestAlternateURLReturns503WithRetryAfter(t *testing.T) {
 	dir := t.TempDir()
 	fs, _ := storage.New(dir)
@@ -76,9 +76,10 @@ func TestAlternateURLReturns503WithRetryAfter(t *testing.T) {
 		t.Fatal("missing cert URL")
 	}
 
-	// The Link header on /finalize should advertise the alternate URL.
-	if got := resp.Header.Get("Link"); !strings.Contains(got, `rel="alternate"`) {
-		t.Errorf("Link header missing alternate: %q", got)
+	// Without landmark support configured, Cactus keeps the direct alternate
+	// endpoint but does not advertise it to generic ACME clients.
+	if got := resp.Header.Get("Link"); got != "" {
+		t.Errorf("Link header = %q, want absent", got)
 	}
 
 	// /cert/{id}/alternate must return 503 + Retry-After.

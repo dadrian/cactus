@@ -867,7 +867,9 @@ func (s *Server) handleFinalize(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Location", loc)
 	s.issueNonce(w)
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Link", `<`+s.urlFor("/cert/"+certID+"/alternate")+`>;rel="alternate"`)
+	if s.alternateCertsEnabled() {
+		w.Header().Set("Link", `<`+s.urlFor("/cert/"+certID+"/alternate")+`>;rel="alternate"`)
+	}
 	_ = json.NewEncoder(w).Encode(s.orderJSON(o))
 }
 
@@ -897,7 +899,9 @@ func (s *Server) handleCert(w http.ResponseWriter, r *http.Request) {
 	}
 	s.issueNonce(w)
 	accept := r.Header.Get("Accept")
-	w.Header().Set("Link", `<`+s.urlFor("/cert/"+id+"/alternate")+`>;rel="alternate"`)
+	if s.alternateCertsEnabled() {
+		w.Header().Set("Link", `<`+s.urlFor("/cert/"+id+"/alternate")+`>;rel="alternate"`)
+	}
 	if strings.Contains(accept, "application/pem-certificate-chain-with-properties") {
 		w.Header().Set("Content-Type", "application/pem-certificate-chain-with-properties")
 		// Standalone cert: just the trust_anchor_id property naming the log.
@@ -921,6 +925,10 @@ func (s *Server) handleCert(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/pem-certificate-chain")
 	pem.Encode(w, &pem.Block{Type: "CERTIFICATE", Bytes: der})
+}
+
+func (s *Server) alternateCertsEnabled() bool {
+	return s.cfg.Landmarks != nil && s.cfg.SubtreeProof != nil
 }
 
 // handleCertAlternate returns the landmark-relative cert (Phase 8) for
